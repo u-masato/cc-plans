@@ -1,9 +1,13 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 
+	"github.com/masato-uno/cc-plans/internal/config"
 	"github.com/masato-uno/cc-plans/internal/fzf"
 	"github.com/masato-uno/cc-plans/internal/pager"
 	"github.com/masato-uno/cc-plans/internal/plan"
@@ -43,20 +47,64 @@ func runInteractive(cmd *cobra.Command, args []string) error {
 
 	plan.SortByModTime(plans)
 
-	selected, err := fzf.Select(plans)
+	result, err := fzf.Select(plans)
 	if err != nil {
 		return fmt.Errorf("fzf エラー: %w", err)
 	}
 
-	if selected == "" {
+	if result.Name == "" {
 		return nil // User cancelled
 	}
 
-	// Show the selected plan
-	content, err := repo.GetContent(selected)
+	// Get the selected plan
+	selectedPlan, err := repo.Get(result.Name)
 	if err != nil {
-		return fmt.Errorf("プランの読み取りに失敗しました: %w", err)
+		return fmt.Errorf("プランの取得に失敗しました: %w", err)
 	}
 
-	return pager.Show(content, true)
+	switch result.Action {
+	case fzf.ActionEdit:
+		return openInEditor(selectedPlan.Path)
+	case fzf.ActionDelete:
+		return deletePlan(repo, result.Name)
+	default:
+		// ActionShow - Show the selected plan
+		content, err := repo.GetContent(result.Name)
+		if err != nil {
+			return fmt.Errorf("プランの読み取りに失敗しました: %w", err)
+		}
+		return pager.Show(content, true)
+	}
+}
+
+func openInEditor(path string) error {
+	editor := config.Editor()
+	cmd := exec.Command(editor, path)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func deletePlan(repo *plan.Repository, name string) error {
+	fmt.Printf("プラン '%s' を削除しますか? [y/N]: ", name)
+
+	reader := bufio.NewReader(os.Stdin)
+	answer, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("入力の読み取りに失敗しました: %w", err)
+	}
+
+	answer = strings.TrimSpace(strings.ToLower(answer))
+	if answer != "y" && answer != "yes" {
+		fmt.Println("削除をキャンセルしました")
+		return nil
+	}
+
+	if err := repo.Delete(name); err != nil {
+		return fmt.Errorf("プランの削除に失敗しました: %w", err)
+	}
+
+	fmt.Printf("プラン '%s' を削除しました\n", name)
+	return nil
 }

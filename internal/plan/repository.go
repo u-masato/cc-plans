@@ -115,6 +115,15 @@ func (r *Repository) GetContent(name string) (string, error) {
 	return string(content), nil
 }
 
+// Delete removes a plan file.
+func (r *Repository) Delete(name string) error {
+	plan, err := r.Get(name)
+	if err != nil {
+		return err
+	}
+	return os.Remove(plan.Path)
+}
+
 // Search searches plans by query.
 func (r *Repository) Search(query string, nameOnly bool) ([]SearchResult, error) {
 	plans, err := r.List()

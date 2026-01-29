@@ -25,3 +25,11 @@ func Pager() string {
 	}
 	return DefaultPager
 }
+
+// Editor returns the editor command to use.
+func Editor() string {
+	if e := os.Getenv("EDITOR"); e != "" {
+		return e
+	}
+	return "vim"
+}
