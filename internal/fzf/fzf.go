@@ -10,17 +10,33 @@ import (
 	"github.com/masato-uno/cc-plans/internal/plan"
 )
 
+// Action represents the action to take on the selected plan.
+type Action int
+
+const (
+	ActionNone Action = iota
+	ActionShow
+	ActionEdit
+	ActionDelete
+)
+
+// SelectResult represents the result of fzf selection.
+type SelectResult struct {
+	Name   string
+	Action Action
+}
+
 // IsAvailable returns true if fzf is installed and available.
 func IsAvailable() bool {
 	_, err := exec.LookPath("fzf")
 	return err == nil
 }
 
-// Select launches fzf with the given plans and returns the selected plan name.
-// Returns empty string if user cancels or no selection is made.
-func Select(plans []plan.Plan) (string, error) {
+// Select launches fzf with the given plans and returns the selected plan name and action.
+// Returns empty result if user cancels or no selection is made.
+func Select(plans []plan.Plan) (SelectResult, error) {
 	if len(plans) == 0 {
-		return "", nil
+		return SelectResult{}, nil
 	}
 
 	// Build input for fzf: "name\ttitle"
@@ -33,7 +49,7 @@ func Select(plans []plan.Plan) (string, error) {
 		fmt.Fprintf(&input, "%s\t%s\n", p.Name, title)
 	}
 
-	// Build fzf command with preview
+	// Build fzf command with preview and key bindings
 	cmd := exec.Command("fzf",
 		"--height=40%",
 		"--reverse",
@@ -41,6 +57,8 @@ func Select(plans []plan.Plan) (string, error) {
 		"--with-nth=1,2",
 		"--preview", "head -50 ~/.claude/plans/{1}.md",
 		"--preview-window=right:50%:wrap",
+		"--expect=ctrl-e,ctrl-d",
+		"--header=Enter: 表示 | ctrl-e: 編集 | ctrl-d: 削除",
 	)
 
 	cmd.Stdin = strings.NewReader(input.String())
@@ -55,18 +73,42 @@ func Select(plans []plan.Plan) (string, error) {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			code := exitErr.ExitCode()
 			if code == 130 || code == 1 {
-				return "", nil // User cancelled
+				return SelectResult{}, nil // User cancelled
 			}
 		}
-		return "", err
+		return SelectResult{}, err
 	}
 
-	result := strings.TrimSpace(stdout.String())
-	if result == "" {
-		return "", nil
+	output := stdout.String()
+	lines := strings.Split(output, "\n")
+
+	if len(lines) < 2 {
+		return SelectResult{}, nil
+	}
+
+	// First line is the key pressed (from --expect)
+	key := strings.TrimSpace(lines[0])
+	// Second line is the selected item
+	selection := strings.TrimSpace(lines[1])
+
+	if selection == "" {
+		return SelectResult{}, nil
 	}
 
 	// Extract just the name (first field before tab)
-	parts := strings.Split(result, "\t")
-	return parts[0], nil
+	parts := strings.Split(selection, "\t")
+	name := parts[0]
+
+	// Determine action based on key pressed
+	var action Action
+	switch key {
+	case "ctrl-e":
+		action = ActionEdit
+	case "ctrl-d":
+		action = ActionDelete
+	default:
+		action = ActionShow
+	}
+
+	return SelectResult{Name: name, Action: action}, nil
 }
