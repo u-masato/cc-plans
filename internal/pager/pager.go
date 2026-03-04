@@ -9,6 +9,16 @@ import (
 	"github.com/masato-uno/cc-plans/internal/config"
 )
 
+// appendLessEnv appends LESS=FRX to the environment if LESS is not already set.
+func appendLessEnv(env []string) []string {
+	for _, e := range env {
+		if strings.HasPrefix(e, "LESS=") {
+			return env
+		}
+	}
+	return append(env, "LESS=FRX")
+}
+
 // IsPiped returns true if stdout is piped (not a terminal).
 func IsPiped() bool {
 	fi, err := os.Stdout.Stat()
@@ -37,6 +47,7 @@ func Show(content string, usePager bool) error {
 	cmd.Stdin = strings.NewReader(content)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env = appendLessEnv(os.Environ())
 
 	return cmd.Run()
 }

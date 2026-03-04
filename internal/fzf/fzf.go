@@ -10,6 +10,14 @@ import (
 	"github.com/masato-uno/cc-plans/internal/plan"
 )
 
+func selfPath() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return "cc-plans"
+	}
+	return exe
+}
+
 // Action represents the action to take on the selected plan.
 type Action int
 
@@ -55,7 +63,7 @@ func Select(plans []plan.Plan) (SelectResult, error) {
 		"--reverse",
 		"--delimiter=\t",
 		"--with-nth=1,2",
-		"--preview", "head -50 ~/.claude/plans/{1}.md",
+		"--preview", selfPath()+" show --no-pager {1}",
 		"--preview-window=right:50%:wrap",
 		"--expect=ctrl-e,ctrl-d",
 		"--header=Enter: 表示 | ctrl-e: 編集 | ctrl-d: 削除",
