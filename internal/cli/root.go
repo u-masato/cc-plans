@@ -75,7 +75,7 @@ func runInteractive(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("プランの読み取りに失敗しました: %w", err)
 		}
 		if !config.RawMarkdown() && !pager.IsPiped() {
-			content, _ = renderer.Render(content)
+			content = renderer.Render(content)
 		}
 		return pager.Show(content, true)
 	}

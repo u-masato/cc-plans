@@ -10,21 +10,21 @@ import (
 
 // Render converts Markdown content to ANSI-styled terminal output.
 // On failure, returns the original content unchanged (graceful degradation).
-func Render(content string) (string, error) {
+func Render(content string) string {
 	r, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
 		glamour.WithWordWrap(terminalWidth()),
 	)
 	if err != nil {
-		return content, nil
+		return content
 	}
 
 	rendered, err := r.Render(content)
 	if err != nil {
-		return content, nil
+		return content
 	}
 
-	return rendered, nil
+	return rendered
 }
 
 func terminalWidth() int {

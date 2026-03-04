@@ -63,7 +63,7 @@ func Select(plans []plan.Plan) (SelectResult, error) {
 		"--reverse",
 		"--delimiter=\t",
 		"--with-nth=1,2",
-		"--preview", selfPath()+" show --no-pager {1}",
+		"--preview", fmt.Sprintf("'%s' show --no-pager {1}", selfPath()),
 		"--preview-window=right:50%:wrap",
 		"--expect=ctrl-e,ctrl-d",
 		"--header=Enter: 表示 | ctrl-e: 編集 | ctrl-d: 削除",

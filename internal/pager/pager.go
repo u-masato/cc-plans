@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/masato-uno/cc-plans/internal/config"
@@ -47,7 +48,9 @@ func Show(content string, usePager bool) error {
 	cmd.Stdin = strings.NewReader(content)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = appendLessEnv(os.Environ())
+	if filepath.Base(parts[0]) == "less" {
+		cmd.Env = appendLessEnv(os.Environ())
+	}
 
 	return cmd.Run()
 }

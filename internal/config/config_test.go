@@ -17,8 +17,12 @@ func TestPlansDir(t *testing.T) {
 }
 
 func TestPager_Default(t *testing.T) {
+	// t.Setenv captures original value for cleanup, then we unset
 	t.Setenv("PAGER", "")
 	os.Unsetenv("PAGER")
+	t.Cleanup(func() {
+		// t.Setenv's cleanup will restore original value
+	})
 	p := Pager()
 	if p != DefaultPager {
 		t.Errorf("Pager() = %q, want %q", p, DefaultPager)
@@ -36,6 +40,7 @@ func TestPager_EnvOverride(t *testing.T) {
 func TestEditor_Default(t *testing.T) {
 	t.Setenv("EDITOR", "")
 	os.Unsetenv("EDITOR")
+	t.Cleanup(func() {})
 	e := Editor()
 	if e != "vim" {
 		t.Errorf("Editor() = %q, want 'vim'", e)
@@ -51,7 +56,9 @@ func TestEditor_EnvOverride(t *testing.T) {
 }
 
 func TestRawMarkdown_Unset(t *testing.T) {
+	t.Setenv("CC_PLANS_RAW", "")
 	os.Unsetenv("CC_PLANS_RAW")
+	t.Cleanup(func() {})
 	if RawMarkdown() {
 		t.Error("RawMarkdown() = true, want false when CC_PLANS_RAW is unset")
 	}
@@ -67,21 +74,28 @@ func TestRawMarkdown_Enabled(t *testing.T) {
 func TestRawMarkdown_OtherValues(t *testing.T) {
 	tests := []struct {
 		value string
+		unset bool
 		want  bool
 	}{
-		{"0", false},
-		{"true", false},
-		{"yes", false},
-		{"", false},
-		{"1", true},
+		{"0", false, false},
+		{"true", false, false},
+		{"yes", false, false},
+		{"", true, false},
+		{"1", false, true},
 	}
 	for _, tt := range tests {
-		t.Run("CC_PLANS_RAW="+tt.value, func(t *testing.T) {
-			if tt.value == "" {
+		name := "CC_PLANS_RAW=" + tt.value
+		if tt.unset {
+			name = "CC_PLANS_RAW=<unset>"
+		}
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("CC_PLANS_RAW", "")
+			if tt.unset {
 				os.Unsetenv("CC_PLANS_RAW")
 			} else {
-				t.Setenv("CC_PLANS_RAW", tt.value)
+				os.Setenv("CC_PLANS_RAW", tt.value)
 			}
+			t.Cleanup(func() {})
 			if got := RawMarkdown(); got != tt.want {
 				t.Errorf("RawMarkdown() = %v, want %v", got, tt.want)
 			}

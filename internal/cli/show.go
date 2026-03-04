@@ -47,7 +47,7 @@ func runShow(cmd *cobra.Command, args []string) error {
 	}
 
 	if !showRaw && !config.RawMarkdown() && !pager.IsPiped() {
-		content, _ = renderer.Render(content)
+		content = renderer.Render(content)
 	}
 
 	return pager.Show(content, !showNoPager)
