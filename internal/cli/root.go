@@ -11,6 +11,7 @@ import (
 	"github.com/masato-uno/cc-plans/internal/fzf"
 	"github.com/masato-uno/cc-plans/internal/pager"
 	"github.com/masato-uno/cc-plans/internal/plan"
+	"github.com/masato-uno/cc-plans/internal/renderer"
 	"github.com/spf13/cobra"
 )
 
@@ -72,6 +73,9 @@ func runInteractive(cmd *cobra.Command, args []string) error {
 		content, err := repo.GetContent(result.Name)
 		if err != nil {
 			return fmt.Errorf("プランの読み取りに失敗しました: %w", err)
+		}
+		if !config.RawMarkdown() && !pager.IsPiped() {
+			content = renderer.Render(content)
 		}
 		return pager.Show(content, true)
 	}

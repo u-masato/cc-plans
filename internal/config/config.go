@@ -26,6 +26,11 @@ func Pager() string {
 	return DefaultPager
 }
 
+// RawMarkdown returns true if Markdown rendering should be disabled globally.
+func RawMarkdown() bool {
+	return os.Getenv("CC_PLANS_RAW") == "1"
+}
+
 // Editor returns the editor command to use.
 func Editor() string {
 	if e := os.Getenv("EDITOR"); e != "" {

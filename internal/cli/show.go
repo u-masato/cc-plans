@@ -4,12 +4,17 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/masato-uno/cc-plans/internal/config"
 	"github.com/masato-uno/cc-plans/internal/pager"
 	"github.com/masato-uno/cc-plans/internal/plan"
+	"github.com/masato-uno/cc-plans/internal/renderer"
 	"github.com/spf13/cobra"
 )
 
-var showNoPager bool
+var (
+	showNoPager bool
+	showRaw     bool
+)
 
 func init() {
 	showCmd := &cobra.Command{
@@ -21,6 +26,7 @@ func init() {
 	}
 
 	showCmd.Flags().BoolVar(&showNoPager, "no-pager", false, "ページャーを使用しない")
+	showCmd.Flags().BoolVar(&showRaw, "raw", false, "Markdownレンダリングを無効化")
 
 	rootCmd.AddCommand(showCmd)
 }
@@ -38,6 +44,10 @@ func runShow(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("'%s' に一致するプランが複数あります。より具体的な名前を指定してください", name)
 		}
 		return fmt.Errorf("プランの読み取りに失敗しました: %w", err)
+	}
+
+	if !showRaw && !config.RawMarkdown() && !pager.IsPiped() {
+		content = renderer.Render(content)
 	}
 
 	return pager.Show(content, !showNoPager)
