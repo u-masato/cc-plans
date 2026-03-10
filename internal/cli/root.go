@@ -57,7 +57,6 @@ func runInteractive(cmd *cobra.Command, args []string) error {
 		return nil // User cancelled
 	}
 
-	// Get the selected plan
 	selectedPlan, err := repo.Get(result.Name)
 	if err != nil {
 		return fmt.Errorf("プランの取得に失敗しました: %w", err)
@@ -69,7 +68,6 @@ func runInteractive(cmd *cobra.Command, args []string) error {
 	case fzf.ActionDelete:
 		return deletePlan(repo, result.Name)
 	default:
-		// ActionShow - Show the selected plan
 		content, err := repo.GetContent(result.Name)
 		if err != nil {
 			return fmt.Errorf("プランの読み取りに失敗しました: %w", err)

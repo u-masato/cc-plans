@@ -17,7 +17,7 @@ func appendLessEnv(env []string) []string {
 			return env
 		}
 	}
-	return append(env, "LESS=FRX")
+	return append(env, "LESS=RX")
 }
 
 // IsPiped returns true if stdout is piped (not a terminal).

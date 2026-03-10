@@ -13,7 +13,6 @@ func TestSelfPath(t *testing.T) {
 }
 
 func TestIsAvailable(t *testing.T) {
-	// Test reflects actual system state - just verify no panic
 	available := IsAvailable()
 
 	_, err := exec.LookPath("fzf")
@@ -24,17 +23,21 @@ func TestIsAvailable(t *testing.T) {
 	}
 }
 
-func TestActionConstants(t *testing.T) {
-	if ActionNone != 0 {
-		t.Errorf("ActionNone = %d, want 0", ActionNone)
+func TestActionFromKey(t *testing.T) {
+	tests := []struct {
+		key  string
+		want Action
+	}{
+		{"ctrl-e", ActionEdit},
+		{"ctrl-d", ActionDelete},
+		{"", ActionShow},
+		{"enter", ActionShow},
 	}
-	if ActionShow != 1 {
-		t.Errorf("ActionShow = %d, want 1", ActionShow)
-	}
-	if ActionEdit != 2 {
-		t.Errorf("ActionEdit = %d, want 2", ActionEdit)
-	}
-	if ActionDelete != 3 {
-		t.Errorf("ActionDelete = %d, want 3", ActionDelete)
+	for _, tt := range tests {
+		t.Run(tt.key, func(t *testing.T) {
+			if got := actionFromKey(tt.key); got != tt.want {
+				t.Errorf("actionFromKey(%q) = %d, want %d", tt.key, got, tt.want)
+			}
+		})
 	}
 }
