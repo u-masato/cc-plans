@@ -1,0 +1,16 @@
+pre-commit:
+  parallel: true
+  commands:
+    goimports:
+      glob: "*.go"
+      run: goimports -l -w {staged_files} && git add {staged_files}
+      stage_fixed: true
+    govet:
+      glob: "*.go"
+      run: go vet ./...
+    golangci-lint:
+      glob: "*.go"
+      run: go tool golangci-lint run --new-from-rev=HEAD~1
+    test:
+      glob: "*.go"
+      run: go test ./...
