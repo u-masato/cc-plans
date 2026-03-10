@@ -62,6 +62,7 @@ func (r *Repository) List() ([]Plan, error) {
 			ModTime: info.ModTime(),
 			Size:    info.Size(),
 			Title:   extractTitle(path),
+			Preview: extractPreview(path),
 		})
 	}
 

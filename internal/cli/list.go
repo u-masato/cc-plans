@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	listLong    bool
-	listSortMod bool
+	listLong     bool
+	listSortMod  bool
+	listNameOnly bool
 )
 
 func init() {
@@ -24,6 +25,7 @@ func init() {
 
 	listCmd.Flags().BoolVarP(&listLong, "long", "l", false, "詳細表示（更新日時、サイズ、タイトル）")
 	listCmd.Flags().BoolVarP(&listSortMod, "time", "t", false, "更新順でソート")
+	listCmd.Flags().BoolVarP(&listNameOnly, "name-only", "n", false, "名前のみ表示")
 
 	rootCmd.AddCommand(listCmd)
 }
@@ -46,14 +48,37 @@ func runList(cmd *cobra.Command, args []string) error {
 		plan.SortByName(plans)
 	}
 
+	if listNameOnly {
+		for _, p := range plans {
+			fmt.Println(p.Name)
+		}
+		return nil
+	}
+
 	if listLong {
 		return printListLong(plans)
 	}
 
+	return printListDefault(plans)
+}
+
+func printListDefault(plans []plan.Plan) error {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	for _, p := range plans {
-		fmt.Println(p.Name)
+		title := p.Title
+		if title != "" {
+			title = "  " + title
+		}
+		fmt.Fprintf(w, "%s\t%s%s\n",
+			p.ModTime.Format("2006-01-02 15:04"),
+			p.Name,
+			title,
+		)
+		if p.Preview != "" {
+			fmt.Fprintf(w, "\t\033[2m%s\033[0m\n", p.Preview)
+		}
 	}
-	return nil
+	return w.Flush()
 }
 
 func printListLong(plans []plan.Plan) error {
@@ -69,6 +94,9 @@ func printListLong(plans []plan.Plan) error {
 			p.Name,
 			title,
 		)
+		if p.Preview != "" {
+			fmt.Fprintf(w, "\t\t\t\033[2m%s\033[0m\n", p.Preview)
+		}
 	}
 	return w.Flush()
 }
