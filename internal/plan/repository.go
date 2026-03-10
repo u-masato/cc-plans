@@ -56,13 +56,14 @@ func (r *Repository) List() ([]Plan, error) {
 		}
 
 		path := filepath.Join(r.plansDir, name)
+		title, preview := extractMeta(path)
 		plans = append(plans, Plan{
 			Name:    strings.TrimSuffix(name, ".md"),
 			Path:    path,
 			ModTime: info.ModTime(),
 			Size:    info.Size(),
-			Title:   extractTitle(path),
-			Preview: extractPreview(path),
+			Title:   title,
+			Preview: preview,
 		})
 	}
 

@@ -6,6 +6,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/masato-uno/cc-plans/internal/plan"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 )
 
@@ -26,6 +27,7 @@ func init() {
 	listCmd.Flags().BoolVarP(&listLong, "long", "l", false, "詳細表示（更新日時、サイズ、タイトル）")
 	listCmd.Flags().BoolVarP(&listSortMod, "time", "t", false, "更新順でソート")
 	listCmd.Flags().BoolVarP(&listNameOnly, "name-only", "n", false, "名前のみ表示")
+	listCmd.MarkFlagsMutuallyExclusive("long", "name-only")
 
 	rootCmd.AddCommand(listCmd)
 }
@@ -62,6 +64,13 @@ func runList(cmd *cobra.Command, args []string) error {
 	return printListDefault(plans)
 }
 
+func dimText(s string) string {
+	if isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+		return "\033[2m" + s + "\033[0m"
+	}
+	return s
+}
+
 func printListDefault(plans []plan.Plan) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	for _, p := range plans {
@@ -75,7 +84,7 @@ func printListDefault(plans []plan.Plan) error {
 			title,
 		)
 		if p.Preview != "" {
-			fmt.Fprintf(w, "\t\033[2m%s\033[0m\n", p.Preview)
+			fmt.Fprintf(w, "\t%s\n", dimText(p.Preview))
 		}
 	}
 	return w.Flush()
@@ -95,7 +104,7 @@ func printListLong(plans []plan.Plan) error {
 			title,
 		)
 		if p.Preview != "" {
-			fmt.Fprintf(w, "\t\t\t\033[2m%s\033[0m\n", p.Preview)
+			fmt.Fprintf(w, "\t\t\t%s\n", dimText(p.Preview))
 		}
 	}
 	return w.Flush()

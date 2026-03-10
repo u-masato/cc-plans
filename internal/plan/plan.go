@@ -14,52 +14,69 @@ type Plan struct {
 	ModTime time.Time // modification time
 	Size    int64     // file size
 	Title   string    // first # heading from file
-	Preview string   // first meaningful lines as preview
+	Preview string    // first meaningful lines as preview
 }
 
-// extractTitle reads the first # heading from the file.
-func extractTitle(path string) string {
+// extractMeta reads the title and preview from a single file scan.
+func extractMeta(path string) (title, preview string) {
 	f, err := os.Open(path)
 	if err != nil {
-		return ""
+		return "", ""
 	}
 	defer f.Close()
 
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "# ") {
-			return strings.TrimPrefix(line, "# ")
-		}
-	}
-	return ""
-}
-
-// extractPreview reads the first meaningful lines from the file, skipping headings and blank lines.
-func extractPreview(path string) string {
-	f, err := os.Open(path)
-	if err != nil {
-		return ""
-	}
-	defer f.Close()
-
-	const maxLines = 2
+	const maxPreviewLines = 2
 	const maxLen = 60
 
 	var lines []string
 	scanner := bufio.NewScanner(f)
-	for scanner.Scan() && len(lines) < maxLines {
+	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
+
+		if title == "" && strings.HasPrefix(line, "# ") {
+			title = strings.TrimPrefix(line, "# ")
 			continue
 		}
+
+		if len(lines) >= maxPreviewLines {
+			break
+		}
+
+		if isSkippableLine(line) {
+			continue
+		}
+
 		if len([]rune(line)) > maxLen {
 			line = string([]rune(line)[:maxLen]) + "..."
 		}
 		lines = append(lines, line)
 	}
 
-	return strings.Join(lines, " / ")
+	preview = strings.Join(lines, " / ")
+	return title, preview
+}
+
+// isSkippableLine returns true for lines that should not appear in preview.
+func isSkippableLine(line string) bool {
+	if line == "" {
+		return true
+	}
+	// headings
+	if strings.HasPrefix(line, "#") {
+		return true
+	}
+	// table separator (e.g. |---|---|)
+	trimmed := strings.ReplaceAll(strings.ReplaceAll(line, "-", ""), "|", "")
+	trimmed = strings.ReplaceAll(trimmed, ":", "")
+	trimmed = strings.TrimSpace(trimmed)
+	if trimmed == "" && strings.Contains(line, "|") {
+		return true
+	}
+	// table header rows (e.g. | Name | Value |)
+	if strings.HasPrefix(line, "|") && strings.HasSuffix(line, "|") {
+		return true
+	}
+	return false
 }
 
 // SearchResult represents a search match.
