@@ -104,19 +104,19 @@ func Select(plans []plan.Plan) (SelectResult, error) {
 	}
 
 	// Extract just the name (first field before tab)
-	parts := strings.Split(selection, "\t")
-	name := parts[0]
+	name := strings.Split(selection, "\t")[0]
 
-	// Determine action based on key pressed
-	var action Action
+	return SelectResult{Name: name, Action: actionFromKey(key)}, nil
+}
+
+// actionFromKey maps an fzf --expect key to an Action.
+func actionFromKey(key string) Action {
 	switch key {
 	case "ctrl-e":
-		action = ActionEdit
+		return ActionEdit
 	case "ctrl-d":
-		action = ActionDelete
+		return ActionDelete
 	default:
-		action = ActionShow
+		return ActionShow
 	}
-
-	return SelectResult{Name: name, Action: action}, nil
 }

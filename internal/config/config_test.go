@@ -17,61 +17,40 @@ func TestPlansDir(t *testing.T) {
 }
 
 func TestPager_Default(t *testing.T) {
-	// t.Setenv captures original value for cleanup, then we unset
 	t.Setenv("PAGER", "")
 	os.Unsetenv("PAGER")
-	t.Cleanup(func() {
-		// t.Setenv's cleanup will restore original value
-	})
-	p := Pager()
-	if p != DefaultPager {
-		t.Errorf("Pager() = %q, want %q", p, DefaultPager)
+
+	if got := Pager(); got != DefaultPager {
+		t.Errorf("Pager() = %q, want %q", got, DefaultPager)
 	}
 }
 
 func TestPager_EnvOverride(t *testing.T) {
 	t.Setenv("PAGER", "more")
-	p := Pager()
-	if p != "more" {
-		t.Errorf("Pager() = %q, want 'more'", p)
+
+	if got := Pager(); got != "more" {
+		t.Errorf("Pager() = %q, want 'more'", got)
 	}
 }
 
 func TestEditor_Default(t *testing.T) {
 	t.Setenv("EDITOR", "")
 	os.Unsetenv("EDITOR")
-	t.Cleanup(func() {})
-	e := Editor()
-	if e != "vim" {
-		t.Errorf("Editor() = %q, want 'vim'", e)
+
+	if got := Editor(); got != "vim" {
+		t.Errorf("Editor() = %q, want 'vim'", got)
 	}
 }
 
 func TestEditor_EnvOverride(t *testing.T) {
 	t.Setenv("EDITOR", "nano")
-	e := Editor()
-	if e != "nano" {
-		t.Errorf("Editor() = %q, want 'nano'", e)
+
+	if got := Editor(); got != "nano" {
+		t.Errorf("Editor() = %q, want 'nano'", got)
 	}
 }
 
-func TestRawMarkdown_Unset(t *testing.T) {
-	t.Setenv("CC_PLANS_RAW", "")
-	os.Unsetenv("CC_PLANS_RAW")
-	t.Cleanup(func() {})
-	if RawMarkdown() {
-		t.Error("RawMarkdown() = true, want false when CC_PLANS_RAW is unset")
-	}
-}
-
-func TestRawMarkdown_Enabled(t *testing.T) {
-	t.Setenv("CC_PLANS_RAW", "1")
-	if !RawMarkdown() {
-		t.Error("RawMarkdown() = false, want true when CC_PLANS_RAW=1")
-	}
-}
-
-func TestRawMarkdown_OtherValues(t *testing.T) {
+func TestRawMarkdown(t *testing.T) {
 	tests := []struct {
 		value string
 		unset bool
@@ -89,13 +68,12 @@ func TestRawMarkdown_OtherValues(t *testing.T) {
 			name = "CC_PLANS_RAW=<unset>"
 		}
 		t.Run(name, func(t *testing.T) {
-			t.Setenv("CC_PLANS_RAW", "")
 			if tt.unset {
+				t.Setenv("CC_PLANS_RAW", "")
 				os.Unsetenv("CC_PLANS_RAW")
 			} else {
-				os.Setenv("CC_PLANS_RAW", tt.value)
+				t.Setenv("CC_PLANS_RAW", tt.value)
 			}
-			t.Cleanup(func() {})
 			if got := RawMarkdown(); got != tt.want {
 				t.Errorf("RawMarkdown() = %v, want %v", got, tt.want)
 			}
